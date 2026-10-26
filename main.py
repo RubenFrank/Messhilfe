@@ -24,8 +24,9 @@ import matplotlib.pyplot as plt
 
 val_meas1=[]  
 val_meas2=[]
-cnt_meas=0
-save_idx=0
+cnt_meas = 0
+save_idx = 0
+save_path = None
 
 com = SerialCommunication()
 
@@ -34,6 +35,9 @@ atexit.register(com.close_ports)
 root=tk.Tk()
 root.title("Messhilfe")
 root.geometry("700x700")
+
+style=ttk.Style()
+style.configure("TLabel", background="lightgray")
 
 #Strukturierung des fensters in Frames
 
@@ -166,21 +170,50 @@ def meas_start():
     else:
         print("Bitte mindestens einen Port verbinden, um Messungen durchzuführen.")
 
+def save_data():
+    global save_path, save_idx
+    save_path=save_data_to_csv(save_path,save_idx, val_meas1, val_meas2, com.unit[PORT1], com.unit[PORT2])
+    save_idx=cnt_meas
+    label_open_file.config(text=save_path)
+
+def load_data():
+    global save_path, cnt_meas, val_meas1, val_meas2, save_idx
+    save_path, val_meas1, val_meas2, cnt_meas=load_data_from_csv()
+    save_idx=cnt_meas
+    label_meascnt.config(text=f"Messungen: {cnt_meas}")
+    label_open_file.config(text=save_path)
+
+def new_measure():
+    global save_path, cnt_meas, val_meas1, val_meas2, save_idx
+    save_path=None
+    cnt_meas=0
+    save_idx=0
+    val_meas1.clear()
+    val_meas2.clear()
+    label_meascnt.config(text=f"Messungen: {cnt_meas}")
+    label_open_file.config(text="")
+
 button_measure=ttk.Button(frame_measurement, text="Messung starten", command=meas_start)
-button_saveData=ttk.Button(frame_measurement, text="Messwerte speichern", command=lambda: save_data_to_csv(save_idx, val_meas1, val_meas2, com.unit[PORT1], com.unit[PORT2]))
+button_saveData=ttk.Button(frame_measurement, text="Messwerte speichern", command= save_data)
+button_loadData=ttk.Button(frame_measurement, text="Messwerte laden", command=load_data)
+button_newMeasure=ttk.Button(frame_measurement, text="Neue Messung", command=new_measure)
 button_showData=ttk.Button(frame_measurement, text="Messungen anzeigen", command=lambda: show_data(val_meas1, val_meas2, com.unit[PORT1], com.unit[PORT2]))
 measure_value1_frame=tk.LabelFrame(frame_measurement,bg="lightgray", text="Messwert Port 1", width=200)
 measure_value2_frame=tk.LabelFrame(frame_measurement, bg="lightgray", text="Messwert Port 2", width=200)
 label_measure1=ttk.Label(measure_value1_frame, text="---")
 label_measure2=ttk.Label(measure_value2_frame, text="---")
-label_meascnt=ttk.Label(frame_measurement, text=f"Messungen: {cnt_meas}")
+label_meascnt=ttk.Label(frame_measurement, text=f"Messungen: {cnt_meas}", style="TLabel")
+label_open_file=ttk.Label(frame_measurement, text=save_path, style="TLabel")
 
 button_measure.grid(row=0, column=0, padx=10, pady=10)
-button_saveData.grid(row=0, column=1, padx=10, pady=10)
-label_meascnt.grid(row=0, column=2, padx=10, pady=10)
+button_saveData.grid(row=1, column=1, padx=10, pady=10)
+button_loadData.grid(row=1, column=2, padx=10, pady=10)
+button_newMeasure.grid(row=1, column=3, padx=10, pady=10)
+label_open_file.grid(row=2, column=0,columnspan=3, padx=10, pady=10)
+label_meascnt.grid(row=0, column=3, padx=10, pady=10)
 button_showData.grid(row=1, column=0, padx=10, pady=10)
-measure_value1_frame.grid(row=2, column=0, padx=10, pady=10)
-measure_value2_frame.grid(row=2, column=1, padx=10, pady=10)
+measure_value1_frame.grid(row=3, column=0, padx=10, pady=10)
+measure_value2_frame.grid(row=3, column=1, padx=10, pady=10)
 label_measure1.pack(fill="x", padx=10, pady=10)
 label_measure2.pack(fill="x", padx=10, pady=10)
 
@@ -188,10 +221,6 @@ label_measure2.pack(fill="x", padx=10, pady=10)
 
 
 #--------------------------------- Frame Diagramm -----------------------------------------------
-testvar=f"{float(+123E-2)} µV"
-
-testlabel=ttk.Label(frame_plot, text=testvar)
-testlabel.pack(pady=10, padx=10)
 
 
 #----------------------------------Packen der ROOT-Frames-----------------------------------------------

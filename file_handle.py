@@ -14,19 +14,34 @@ import pandas as pd
 import datetime 
 #import os
 
-def save_data_to_csv(save_idx , measure_data1, measure_data2, unit1, unit2 ):
-    filepath, file_exist = choose_file()
-    print(f"Speicherpfad: {filepath}")
-
-    if file_exist:
-        #df = pd.read_csv(filepath)
-        df = pd.DataFrame([measure_data1, measure_data2]).T
-        df.to_csv(filepath, mode='a', header=False, index=False)
+def save_data_to_csv(save_path,save_idx, measure_data1, measure_data2, unit1, unit2 ):
+    if save_path is None:
+        filepath, file_exist = choose_file()
+        print(f"Speicherpfad: {filepath}")
+        if file_exist:
+            #df = pd.read_csv(filepath)
+            df = pd.DataFrame([measure_data1, measure_data2]).T
+            df.to_csv(filepath, mode='a', header=False, index=False)
+        else:
+            df = pd.DataFrame({f"Messwert Port 1 [{unit1}]": measure_data1, f"Messwert Port 2 [{unit2}]": measure_data2})
+            df.to_csv(filepath, mode='w', header=True, index=False)
+        return filepath
     else:
-        df = pd.DataFrame({f"Messwert Port 1 [{unit1}]": measure_data1, f"Messwert Port 2 [{unit2}]": measure_data2})
-        df.to_csv(filepath, mode='w', header=True, index=False)
+        df = pd.DataFrame([measure_data1[save_idx:], measure_data2[save_idx:]])
+        df.to_csv(save_path, mode='a', header=False, index=False)
+        return save_path
 
-    
+
+def load_data_from_csv():
+    filepath = open_file()
+    if filepath:
+        df = pd.read_csv(filepath)
+        meas1=df.iloc[:,0].to_list()
+        meas2=df.iloc[:,1].to_list()
+        meas_cnt=len(meas1)
+        return filepath, meas1, meas2, meas_cnt
+    else:
+        return None,None,None,0
     
 
 def create_file():
