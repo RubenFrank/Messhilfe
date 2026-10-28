@@ -12,6 +12,7 @@ from tkinter import filedialog, messagebox
 import pandas as pd
 #import numpy as np
 import datetime 
+import re
 #import os
 
 def save_data_to_csv(save_path,save_idx, measure_data1, measure_data2, unit1, unit2 ):
@@ -39,9 +40,14 @@ def load_data_from_csv():
         meas1=df.iloc[:,0].to_list()
         meas2=df.iloc[:,1].to_list()
         meas_cnt=len(meas1)
-        return filepath, meas1, meas2, meas_cnt
+        #mit re die Einheit der Messung herausfinden
+        units=df.columns.tolist()
+        unit1=re.findall(r"\[(.*?)\]",units[0])
+        unit2=re.findall(r"\[(.*?)\]",units[1])
+
+        return filepath, meas1, meas2, meas_cnt, unit1[0], unit2[0]
     else:
-        return None,None,None,0
+        return None,None,None,0,None,None
     
 
 def create_file():
@@ -66,4 +72,6 @@ def choose_file():
 
 
 if __name__ == "__main__":
-    save_data_to_csv(0, [1,2,3], [4,5,6], "V", "A")
+    #save_data_to_csv(0, [1,2,3], [4,5,6], "V", "A")
+    filepath, meas1, meas2, cnt, unit1, unit2=load_data_from_csv()
+    print(filepath, meas1[0], meas2[0], cnt, unit1, unit2)

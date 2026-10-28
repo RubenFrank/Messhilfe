@@ -21,26 +21,31 @@ import tkinter as tk
 from tkinter import ttk 
 import matplotlib.pyplot as plt
 
-
+#globale Variablen für die Messung und Speicherung der Messwerte
 val_meas1=[]  
 val_meas2=[]
 cnt_meas = 0
 save_idx = 0
 save_path = None
 
+#das Objekt für die Serielle Datenübertragung wird erstellt. (eigene Klasse)
 com = SerialCommunication()
 
+#Beim Beenden des Programms werden die Ports gesclossen und die Messgeräte auf "LOCAL" gesetzt
 atexit.register(com.close_ports)
 
+#-------------------------------------------------------------------------------------------------
+#--------------------------------- GUI  Grund-Frame-----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 root=tk.Tk()
 root.title("Messhilfe")
 root.geometry("700x700")
 
+#Style für Label (ohne Hintergrundfarbe)
 style=ttk.Style()
 style.configure("TLabel", background="lightgray")
 
-#Strukturierung des fensters in Frames
-
+#Strukturierung des Fensters in Frames
 frame_connection=tk.Frame(root, bg="lightgray",width=300)
 frame_measurement=tk.LabelFrame(root,text="Messung", bg="lightgray",width=400,height=150)
 frame_plot=tk.LabelFrame(root,text="Diagramm", bg="lightgray",width=400,height=350)
@@ -49,12 +54,19 @@ frame_connection.pack(side="left", fill="y")
 frame_measurement.pack(side="top", fill="x")
 frame_plot.pack(side="bottom", fill="both", expand=True)
 
-button_refresh_ports=ttk.Button(frame_connection, text="Ports aktualisieren", command=com.refresh_avail_ports)
+#-------------------------------------------------------------------------------------------------
+#----------------------------------Frame Verbiundung----------------------------------------------
+#-------------------------------------------------------------------------------------------------
+def refresh_ports():
+    com.refresh_avail_ports()
+    dropdown_ports_1['values']=[port.device for port in com.avail_ports]
+    dropdown_ports_2['values']=[port.device for port in com.avail_ports]
+
+button_refresh_ports=ttk.Button(frame_connection, text="Ports aktualisieren", command=refresh_ports)
 frame_port1=tk.LabelFrame(frame_connection, text="Port 1", bg="lightgray", width=300)
 frame_port2=tk.LabelFrame(frame_connection, text="Port 2", bg="lightgray", width=300)
 frame_error=tk.LabelFrame(frame_connection, text="Error-Status", bg="lightgray", width=300)
 
-#----------------------------------Frame Verbiundung-----------------------------------------------
 def init_and_open_ports():
     if dropdown_ports_1.current() >= 0:
         com.config_port(PORT1, com.avail_ports[dropdown_ports_1.current()].device)
@@ -74,7 +86,9 @@ def init_and_open_ports():
         # Button zum Verbinden mit dem gewählten Port
 button_connect=ttk.Button(frame_connection, text="Verbinden", command=init_and_open_ports)
 
-#--------------------------------- Frame Port 1 -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
+#--------------------------------- Frame Connection Port 1 -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 # Dropdown-Menü für COM Ports
 dropdown_ports_1=ttk.Combobox(frame_port1, values=[port.device for port in com.avail_ports],state="readonly")
 dropdown_ports_1.set("Bitte COM Port wählen")
@@ -101,7 +115,10 @@ dropdown_measurement_1.pack(pady=10)
 device1_frame.pack(pady=10)
 label_device1.pack(pady=5)
 
-#--------------------------------- Frame Port 2 -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
+#--------------------------------- Frame Connection Port 2 -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
+
 # Dropdown-Menü für COM Ports
 dropdown_ports_2=ttk.Combobox(frame_port2, values=[port.device for port in com.avail_ports],state="readonly")
 dropdown_ports_2.set("Bitte COM Port wählen")
@@ -128,8 +145,9 @@ dropdown_measurement_2.pack(pady=10)
 device2_frame.pack(pady=10)
 label_device2.pack(pady=5)
 
-
+#-------------------------------------------------------------------------------------------------
 #--------------------------------- Frame Error -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 def read_error():
     error1=com.read_error(PORT1)
     error2=com.read_error(PORT2)
@@ -144,8 +162,9 @@ button_readError.pack(pady=5, padx=5, fill="x")
 label_error1.pack(pady=5)
 label_error2.pack(pady=5)
 
-
+#-------------------------------------------------------------------------------------------------
 #--------------------------------- Frame Messung -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 
 def meas_start():
     global cnt_meas
@@ -178,20 +197,22 @@ def save_data():
 
 def load_data():
     global save_path, cnt_meas, val_meas1, val_meas2, save_idx
-    save_path, val_meas1, val_meas2, cnt_meas=load_data_from_csv()
+    save_path, val_meas1, val_meas2, cnt_meas,com.unit[PORT1],com.unit[PORT2]=load_data_from_csv()
     save_idx=cnt_meas
     label_meascnt.config(text=f"Messungen: {cnt_meas}")
     label_open_file.config(text=save_path)
 
 def new_measure():
     global save_path, cnt_meas, val_meas1, val_meas2, save_idx
-    save_path=None
-    cnt_meas=0
-    save_idx=0
-    val_meas1.clear()
-    val_meas2.clear()
-    label_meascnt.config(text=f"Messungen: {cnt_meas}")
-    label_open_file.config(text="")
+    ask_reset=messagebox.askyesno(title="Messwerte verwerfen", message="Wirklich eine neue Messung starten?\nAlle nicht gespeicherte Daten gehen verloren!",icon="warning")
+    if ask_reset:
+        save_path=None
+        cnt_meas=0
+        save_idx=0
+        val_meas1.clear()
+        val_meas2.clear()
+        label_meascnt.config(text=f"Messungen: {cnt_meas}")
+        label_open_file.config(text="")
 
 button_measure=ttk.Button(frame_measurement, text="Messung starten", command=meas_start)
 button_saveData=ttk.Button(frame_measurement, text="Messwerte speichern", command= save_data)
@@ -219,11 +240,14 @@ label_measure2.pack(fill="x", padx=10, pady=10)
 
 
 
-
+#-------------------------------------------------------------------------------------------------
 #--------------------------------- Frame Diagramm -----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 
 
+#-------------------------------------------------------------------------------------------------
 #----------------------------------Packen der ROOT-Frames-----------------------------------------------
+#-------------------------------------------------------------------------------------------------
 button_refresh_ports.pack(pady=5, padx=5, fill="x")
 button_connect.pack(pady=5, padx=5, fill="x")
 frame_port1.pack(pady=10, padx=10, fill="both")
