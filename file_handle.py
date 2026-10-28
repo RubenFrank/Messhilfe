@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------------------------
 #-----------------------------------Messhilfe Unterprogramm: File Handling -----------------------
 #-------------------------------------------------------------------------------------------------
-# Beschreibung: die Speicherung der Messwerte in einer XLSX-Datei (Excel) wird in diesem Unterprogramm realisiert
+# Beschreibung: die Speicherung der Messwerte in einer csv-Datei wird in diesem Unterprogramm realisiert
 # -------------------------------------------------------------------------------------------------
 # Autor:        Ruben Frank (et24014), Tobias Pfau (et24068)
 # -------------------------------------------------------------------------------------------------

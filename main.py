@@ -2,7 +2,7 @@
 #-------------------------------------------Messhilfe---------------------------------------------
 #-------------------------------------------------------------------------------------------------
 # Beschreibung: Programm zum Auslesen der Tischmultimeter von Agilent (34401A und 34410A);
-#               Speicherung der Messwerte in einer XLSX-Datei (Excel);
+#               Speicherung der Messwerte in einer csv-Datei;
 #               Darstellung der ausgewählten Messwerte in einem Diagramm
 # -------------------------------------------------------------------------------------------------
 # Autor:        Ruben Frank (et24014), Tobias Pfau (et24068)
