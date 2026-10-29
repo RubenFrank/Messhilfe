@@ -95,7 +95,7 @@ button_connect=ttk.Button(frame_connection, text="Verbinden", command=init_and_o
 #--------------------------------- Frame Connection Port 1 -----------------------------------------------
 #-------------------------------------------------------------------------------------------------
 # Dropdown-Menü für COM Ports
-dropdown_ports_1=ttk.Combobox(frame_port1, values=[port.device for port in com.avail_ports],state="readonly")
+dropdown_ports_1=ttk.Combobox(frame_port1, values=[port.device for port in com.avail_ports],state="readonly",postcommand=refresh_ports)
 dropdown_ports_1.set("Bitte COM Port wählen")
 def port_selected_1(event):
     label_portinfo_1.config(text=com.avail_ports[dropdown_ports_1.current()].description)
@@ -126,7 +126,7 @@ label_device1.pack(pady=5)
 #-------------------------------------------------------------------------------------------------
 
 # Dropdown-Menü für COM Ports
-dropdown_ports_2=ttk.Combobox(frame_port2, values=[port.device for port in com.avail_ports],state="readonly")
+dropdown_ports_2=ttk.Combobox(frame_port2, values=[port.device for port in com.avail_ports],state="readonly",postcommand=refresh_ports)
 dropdown_ports_2.set("Bitte COM Port wählen")
 def port_selected_2(event):
     label_portinfo_2.config(text=com.avail_ports[dropdown_ports_2.current()].description)
