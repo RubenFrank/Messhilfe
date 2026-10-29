@@ -50,6 +50,7 @@ frame_connection=tk.Frame(root, bg="lightgray",width=300)
 frame_measurement=tk.LabelFrame(root,text="Messung", bg="lightgray",width=400,height=150)
 frame_plot=tk.LabelFrame(root,text="Diagramm", bg="lightgray",width=400,height=350)
 
+#Anzeigen der Elemente im passenden Frame
 frame_connection.pack(side="left", fill="y")
 frame_measurement.pack(side="top", fill="x")
 frame_plot.pack(side="bottom", fill="both", expand=True)
@@ -109,6 +110,7 @@ dropdown_ports_1.bind("<<ComboboxSelected>>", port_selected_1)
 device1_frame=tk.LabelFrame(frame_port1, bg="lightgray", text="Angeschlossenes Gerät")
 label_device1=ttk.Label(device1_frame, text="---")
 
+#Anzeigen der Elemente im passenden Frame
 dropdown_ports_1.pack(pady=5)
 label_portinfo_1.pack(pady=5)
 dropdown_measurement_1.pack(pady=10)
@@ -139,6 +141,7 @@ dropdown_ports_2.bind("<<ComboboxSelected>>", port_selected_2)
 device2_frame=tk.LabelFrame(frame_port2, bg="lightgray", text="Angeschlossenes Gerät")
 label_device2=ttk.Label(device2_frame, text="---")
 
+#Anzeigen der Elemente im passenden Frame
 dropdown_ports_2.pack(pady=5)
 label_portinfo_2.pack(pady=5)
 dropdown_measurement_2.pack(pady=10)
@@ -158,6 +161,7 @@ button_readError=ttk.Button(frame_error, text="Fehler lesen", command=read_error
 label_error1=ttk.Label(frame_error, text="Port 1: ---")
 label_error2=ttk.Label(frame_error, text="Port 2: ---")
 
+#Anzeigen der Elemente im passenden Frame
 button_readError.pack(pady=5, padx=5, fill="x")
 label_error1.pack(pady=5)
 label_error2.pack(pady=5)
@@ -226,6 +230,7 @@ label_measure2=ttk.Label(measure_value2_frame, text="---")
 label_meascnt=ttk.Label(frame_measurement, text=f"Messungen: {cnt_meas}", style="TLabel")
 label_open_file=ttk.Label(frame_measurement, text=save_path, style="TLabel")
 
+#Anzeigen der Elemente im passenden Frame, hier als grid
 button_measure.grid(row=0, column=0, padx=10, pady=10)
 button_saveData.grid(row=1, column=1, padx=10, pady=10)
 button_loadData.grid(row=1, column=2, padx=10, pady=10)
@@ -237,8 +242,6 @@ measure_value1_frame.grid(row=3, column=0, padx=10, pady=10)
 measure_value2_frame.grid(row=3, column=1, padx=10, pady=10)
 label_measure1.pack(fill="x", padx=10, pady=10)
 label_measure2.pack(fill="x", padx=10, pady=10)
-
-
 
 #-------------------------------------------------------------------------------------------------
 #--------------------------------- Frame Diagramm -----------------------------------------------
