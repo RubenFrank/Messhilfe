@@ -19,6 +19,9 @@ def save_data_to_csv(save_path,save_idx, measure_data1, measure_data2, unit1, un
     if save_path is None:
         filepath, file_exist = choose_file()
         print(f"Speicherpfad: {filepath}")
+
+        if filepath is None:
+            return None
         if file_exist:
             #df = pd.read_csv(filepath)
             df = pd.DataFrame([measure_data1, measure_data2]).T
@@ -46,20 +49,25 @@ def load_data_from_csv():
         unit2=re.findall(r"\[(.*?)\]",units[1])
 
         return filepath, meas1, meas2, meas_cnt, unit1[0], unit2[0]
-    else:
-        return None,None,None,0,None,None
+    #else:
+       # return #None#,None,None,0,None,None
     
 
 def create_file():
     date=datetime.datetime.now().strftime("%Y%m%d")
     filepath=filedialog.asksaveasfile(title="Datei erstellen",defaultextension=".csv" , filetypes=[("CSV-Dateien", "*.csv")], initialfile=f"Messung_{date}")
+    if filepath:
+        return filepath.name
+    else:
+        return None
     
-    return filepath.name
-
 def open_file():
     filepath=filedialog.askopenfilename(title="Datei auswählen", filetypes=[("CSV-Datei","*.csv"), ("Alle Dateien", "*.*")])
-    return filepath
-
+    if filepath:
+        return filepath
+    else:
+        return None
+    
 def choose_file():
     file_exist=messagebox.askyesno(title="Datei vorhanden", message="Existiert eine Datei, in die die Daten gespeichert werden soll?",icon="question")
     print(f"Datei vorhanden: {file_exist}")

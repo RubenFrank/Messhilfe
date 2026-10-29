@@ -201,10 +201,13 @@ def save_data():
 
 def load_data():
     global save_path, cnt_meas, val_meas1, val_meas2, save_idx
-    save_path, val_meas1, val_meas2, cnt_meas,com.unit[PORT1],com.unit[PORT2]=load_data_from_csv()
-    save_idx=cnt_meas
-    label_meascnt.config(text=f"Messungen: {cnt_meas}")
-    label_open_file.config(text=save_path)
+    result=load_data_from_csv()
+    #save_path, val_meas1, val_meas2, cnt_meas,com.unit[PORT1],com.unit[PORT2]=result
+    if result is not None:
+        save_path, val_meas1, val_meas2, cnt_meas,com.unit[PORT1],com.unit[PORT2]=result
+        save_idx=cnt_meas
+        label_meascnt.config(text=f"Messungen: {cnt_meas}")
+        label_open_file.config(text=save_path)
 
 def new_measure():
     global save_path, cnt_meas, val_meas1, val_meas2, save_idx
