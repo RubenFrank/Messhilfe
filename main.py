@@ -5,7 +5,7 @@
 #               Speicherung der Messwerte in einer csv-Datei;
 #               Darstellung der ausgewählten Messwerte in einem Diagramm
 # -------------------------------------------------------------------------------------------------
-# Autor:        Ruben Frank (et24014), Tobias Pfau (et24068)
+# Autor:        Ruben Frank (et24014), Tobias Lukas Pfau (et24068)
 # -------------------------------------------------------------------------------------------------
 # Datum:        2026-10-19
 # ------------------------------------------------------------------------------------------------- 
@@ -14,6 +14,7 @@
 from serial_communication import *
 from file_handle import *
 from popup import *
+from plots import *
 
 #eingebundene Bibliothekens
 import atexit
@@ -193,6 +194,7 @@ def meas_start():
         label_measure2.config(text=f"{val_meas2[cnt_meas]} {com.unit[PORT2]}")
         cnt_meas+=1
         label_meascnt.config(text=f"Messungen: {cnt_meas}")
+        plot.update_plot()
         
     else:
         print("Bitte mindestens einen Port verbinden, um Messungen durchzuführen.")
@@ -212,6 +214,7 @@ def load_data():
         save_idx=cnt_meas
         label_meascnt.config(text=f"Messungen: {cnt_meas}")
         label_open_file.config(text=save_path)
+        plot.update_plot()
 
 def new_measure():
     global save_path, cnt_meas, val_meas1, val_meas2, save_idx
@@ -224,6 +227,7 @@ def new_measure():
         val_meas2.clear()
         label_meascnt.config(text=f"Messungen: {cnt_meas}")
         label_open_file.config(text="")
+        plot.update_plot()
 
 button_measure=ttk.Button(frame_measurement, text="Messung starten", command=meas_start)
 button_saveData=ttk.Button(frame_measurement, text="Messwerte speichern", command= save_data)
@@ -253,7 +257,8 @@ label_measure2.pack(fill="x", padx=10, pady=10)
 #-------------------------------------------------------------------------------------------------
 #--------------------------------- Frame Diagramm -----------------------------------------------
 #-------------------------------------------------------------------------------------------------
-
+#lambda, damit immer die aktuellen Messwerte verwendet werden (auch nach dem Laden einer Datei)
+plot=PlotFrame(frame_plot, lambda: (val_meas1, val_meas2, com.unit[PORT1], com.unit[PORT2]))
 
 #-------------------------------------------------------------------------------------------------
 #----------------------------------Packen der ROOT-Frames-----------------------------------------------
