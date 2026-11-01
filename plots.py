@@ -13,10 +13,12 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 import datetime
+import os
 from matplotlib.figure import Figure
+from file_handle import load_data_from_csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-#Datenquellen, die auf die Achsen gelegt werden können
+#DAtenquellen, die auf die Achsen gelegt werden können
 DATA_SOURCES=["Messungsnummer", "Port 1", "Port 2"]
 
 #Diagrammart: (Linienstil, Marker)
@@ -58,17 +60,43 @@ class PlotFrame:
         self.entry_ylabel=ttk.Entry(frame_settings, width=20)
         self.entry_ylabel.grid(row=2, column=3, padx=5, pady=2)
 
-        self.grid_on=tk.BooleanVar(value=True)
-        tk.Checkbutton(frame_settings, text="Gitter", variable=self.grid_on, bg="lightgray", command=self.update_plot).grid(row=3, column=0, padx=5, pady=2, sticky="w")
+        #Legendentexte; leer -> "Aktuelle Messung" bzw. Dateiname der Vergleichsmessung
+        ttk.Label(frame_settings, text="Legende Messung:").grid(row=3, column=0, padx=5, pady=2, sticky="w")
+        self.entry_legend=ttk.Entry(frame_settings, width=20)
+        self.entry_legend.grid(row=3, column=1, padx=5, pady=2)
 
-        ttk.Button(frame_settings, text="Als PNG speichern", command=self.save_png).grid(row=3, column=2, padx=5, pady=2, sticky="e")
-        ttk.Button(frame_settings, text="In eigenem Fenster", command=self.open_window).grid(row=3, column=3, padx=5, pady=2, sticky="e")
+        ttk.Label(frame_settings, text="Legende Vergleich:").grid(row=3, column=2, padx=5, pady=2, sticky="w")
+        self.entry_legend_cmp=ttk.Entry(frame_settings, width=20)
+        self.entry_legend_cmp.grid(row=3, column=3, padx=5, pady=2)
+
+        #eigene Achsenwahl für die Vergleichsmessung, z.B. falls dort die Ports vertauscht waren
+        ttk.Label(frame_settings, text="Vergleich X:").grid(row=4, column=0, padx=5, pady=2, sticky="w")
+        self.dropdown_x_cmp=ttk.Combobox(frame_settings, values=DATA_SOURCES, state="readonly", width=17)
+        self.dropdown_x_cmp.set("Messungsnummer")
+        self.dropdown_x_cmp.grid(row=4, column=1, padx=5, pady=2)
+
+        ttk.Label(frame_settings, text="Vergleich Y:").grid(row=4, column=2, padx=5, pady=2, sticky="w")
+        self.dropdown_y_cmp=ttk.Combobox(frame_settings, values=DATA_SOURCES, state="readonly", width=17)
+        self.dropdown_y_cmp.set("Port 1")
+        self.dropdown_y_cmp.grid(row=4, column=3, padx=5, pady=2)
+
+        self.grid_on=tk.BooleanVar(value=True)
+        tk.Checkbutton(frame_settings, text="Gitter", variable=self.grid_on, bg="lightgray", command=self.update_plot).grid(row=5, column=0, padx=5, pady=2, sticky="w")
+
+        ttk.Button(frame_settings, text="Vergleich importieren", command=self.import_comparison).grid(row=5, column=2, padx=5, pady=2, sticky="e")
+        ttk.Button(frame_settings, text="Vergleich entfernen", command=self.remove_comparison).grid(row=5, column=3, padx=5, pady=2, sticky="e")
+
+        ttk.Button(frame_settings, text="Als PNG speichern", command=self.save_png).grid(row=6, column=2, padx=5, pady=2, sticky="e")
+        ttk.Button(frame_settings, text="In eigenem Fenster", command=self.open_window).grid(row=6, column=3, padx=5, pady=2, sticky="e")
 
         #bei jeder Änderung einer Einstellung wird das Diagramm automatisch aktualisiert
-        for dropdown in (self.dropdown_x, self.dropdown_y, self.dropdown_type):
+        for dropdown in (self.dropdown_x, self.dropdown_y, self.dropdown_type, self.dropdown_x_cmp, self.dropdown_y_cmp):
             dropdown.bind("<<ComboboxSelected>>", lambda event: self.update_plot())
-        for entry in (self.entry_title, self.entry_xlabel, self.entry_ylabel):
+        for entry in (self.entry_title, self.entry_xlabel, self.entry_ylabel, self.entry_legend, self.entry_legend_cmp):
             entry.bind("<KeyRelease>", lambda event: self.update_plot())
+
+        #importierte Vergleichsmessung (val_meas1, val_meas2, unit1, unit2), nur für das Diagramm
+        self.comparison=None
 
         frame_settings.pack(side="top", fill="x", padx=5, pady=5)
 
@@ -112,9 +140,26 @@ class PlotFrame:
         if filepath:
             self.figure.savefig(filepath, dpi=150)
 
+    #lädt eine Messung aus einer CSV-Datei, die nur zum Vergleich im Diagramm angezeigt wird
+    def import_comparison(self):
+        result=load_data_from_csv()
+        if result is not None:
+            filepath, val_meas1, val_meas2, meas_cnt, unit1, unit2=result
+            self.comparison=(val_meas1, val_meas2, unit1, unit2)
+            self.entry_legend_cmp.delete(0, tk.END)
+            self.entry_legend_cmp.insert(0, os.path.splitext(os.path.basename(filepath))[0])
+            #Achsenwahl der Vergleichsmessung startet wie die der aktuellen Messung
+            self.dropdown_x_cmp.set(self.dropdown_x.get())
+            self.dropdown_y_cmp.set(self.dropdown_y.get())
+            self.update_plot()
+
+    def remove_comparison(self):
+        self.comparison=None
+        self.update_plot()
+
     #gibt die Werte und die Achsenbeschriftung zur gewählten Datenquelle zurück
-    def get_source(self, source):
-        val_meas1, val_meas2, unit1, unit2=self.get_data()
+    def get_source(self, source, data):
+        val_meas1, val_meas2, unit1, unit2=data
         if source=="Port 1":
             return val_meas1, f"Port 1 [{unit1}]"
         elif source=="Port 2":
@@ -123,13 +168,23 @@ class PlotFrame:
             return list(range(1, len(val_meas1)+1)), "Messungsnummer"
 
     def update_plot(self):
-        x, xlabel=self.get_source(self.dropdown_x.get())
-        y, ylabel=self.get_source(self.dropdown_y.get())
+        data=self.get_data()
+        x, xlabel=self.get_source(self.dropdown_x.get(), data)
+        y, ylabel=self.get_source(self.dropdown_y.get(), data)
         linestyle, marker=PLOT_TYPES[self.dropdown_type.get()]
+
+        if self.comparison is not None:
+            x_cmp, _=self.get_source(self.dropdown_x_cmp.get(), self.comparison)
+            y_cmp, _=self.get_source(self.dropdown_y_cmp.get(), self.comparison)
 
         for figure, ax, canvas in self.figures:
             ax.clear()
-            ax.plot(x, y, linestyle=linestyle, marker=marker)
+            ax.plot(x, y, linestyle=linestyle, marker=marker, label=self.entry_legend.get() or "Aktuelle Messung")
+            if self.comparison is not None:
+                ax.plot(x_cmp, y_cmp, linestyle=linestyle, marker=marker, label=self.entry_legend_cmp.get() or "Vergleichsmessung")
+            #Legende nur bei Vergleich oder eigenem Legendentext anzeigen
+            if self.comparison is not None or self.entry_legend.get():
+                ax.legend()
             ax.set_title(self.entry_title.get())
             ax.set_xlabel(self.entry_xlabel.get() or xlabel)
             ax.set_ylabel(self.entry_ylabel.get() or ylabel)

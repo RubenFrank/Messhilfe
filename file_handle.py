@@ -31,6 +31,8 @@ def save_data_to_csv(save_path,save_idx, measure_data1, measure_data2, unit1, un
             df.to_csv(filepath, mode='w', header=True, index=False)
         return filepath
     else:
+        #TODO: hier fehlt .T (wie in Zeile 27) -> ohne Transponieren werden die Werte als zwei Zeilen
+        #      statt als zwei Spalten angehängt und die Datei lässt sich nicht mehr korrekt laden
         df = pd.DataFrame([measure_data1[save_idx:], measure_data2[save_idx:]])
         df.to_csv(save_path, mode='a', header=False, index=False)
         return save_path
