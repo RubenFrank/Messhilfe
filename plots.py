@@ -65,38 +65,51 @@ class PlotFrame:
         self.entry_legend=ttk.Entry(frame_settings, width=20)
         self.entry_legend.grid(row=3, column=1, padx=5, pady=2)
 
-        ttk.Label(frame_settings, text="Legende Vergleich:").grid(row=3, column=2, padx=5, pady=2, sticky="w")
+        #Auswahl der Vergleichsmessung, die unten bearbeitet wird; + importiert, − entfernt
+        ttk.Label(frame_settings, text="Vergleich:").grid(row=3, column=2, padx=5, pady=2, sticky="w")
+        frame_cmp=tk.Frame(frame_settings, bg="lightgray")
+        self.dropdown_cmp=ttk.Combobox(frame_cmp, state="readonly", width=11)
+        self.dropdown_cmp.pack(side="left")
+        ttk.Button(frame_cmp, text="+", width=2, command=self.import_comparison).pack(side="left", padx=(2,0))
+        self.button_remove_cmp=ttk.Button(frame_cmp, text="−", width=2, command=self.remove_comparison)
+        self.button_remove_cmp.pack(side="left", padx=(2,0))
+        frame_cmp.grid(row=3, column=3, padx=5, pady=2)
+
+        ttk.Label(frame_settings, text="Legende Vergleich:").grid(row=4, column=0, padx=5, pady=2, sticky="w")
         self.entry_legend_cmp=ttk.Entry(frame_settings, width=20)
-        self.entry_legend_cmp.grid(row=3, column=3, padx=5, pady=2)
+        self.entry_legend_cmp.grid(row=4, column=1, padx=5, pady=2)
 
-        #eigene Achsenwahl für die Vergleichsmessung, z.B. falls dort die Ports vertauscht waren
-        ttk.Label(frame_settings, text="Vergleich X:").grid(row=4, column=0, padx=5, pady=2, sticky="w")
+        #eigene Achsenwahl je Vergleichsmessung, z.B. falls dort die Ports vertauscht waren
+        ttk.Label(frame_settings, text="Vergleich X:").grid(row=5, column=0, padx=5, pady=2, sticky="w")
         self.dropdown_x_cmp=ttk.Combobox(frame_settings, values=DATA_SOURCES, state="readonly", width=17)
-        self.dropdown_x_cmp.set("Messungsnummer")
-        self.dropdown_x_cmp.grid(row=4, column=1, padx=5, pady=2)
+        self.dropdown_x_cmp.grid(row=5, column=1, padx=5, pady=2)
 
-        ttk.Label(frame_settings, text="Vergleich Y:").grid(row=4, column=2, padx=5, pady=2, sticky="w")
+        ttk.Label(frame_settings, text="Vergleich Y:").grid(row=5, column=2, padx=5, pady=2, sticky="w")
         self.dropdown_y_cmp=ttk.Combobox(frame_settings, values=DATA_SOURCES, state="readonly", width=17)
-        self.dropdown_y_cmp.set("Port 1")
-        self.dropdown_y_cmp.grid(row=4, column=3, padx=5, pady=2)
+        self.dropdown_y_cmp.grid(row=5, column=3, padx=5, pady=2)
 
         self.grid_on=tk.BooleanVar(value=True)
-        tk.Checkbutton(frame_settings, text="Gitter", variable=self.grid_on, bg="lightgray", command=self.update_plot).grid(row=5, column=0, padx=5, pady=2, sticky="w")
-
-        ttk.Button(frame_settings, text="Vergleich importieren", command=self.import_comparison).grid(row=5, column=2, padx=5, pady=2, sticky="e")
-        ttk.Button(frame_settings, text="Vergleich entfernen", command=self.remove_comparison).grid(row=5, column=3, padx=5, pady=2, sticky="e")
+        tk.Checkbutton(frame_settings, text="Gitter", variable=self.grid_on, bg="lightgray", command=self.update_plot).grid(row=6, column=0, padx=5, pady=2, sticky="w")
 
         ttk.Button(frame_settings, text="Als PNG speichern", command=self.save_png).grid(row=6, column=2, padx=5, pady=2, sticky="e")
         ttk.Button(frame_settings, text="In eigenem Fenster", command=self.open_window).grid(row=6, column=3, padx=5, pady=2, sticky="e")
 
         #bei jeder Änderung einer Einstellung wird das Diagramm automatisch aktualisiert
-        for dropdown in (self.dropdown_x, self.dropdown_y, self.dropdown_type, self.dropdown_x_cmp, self.dropdown_y_cmp):
+        for dropdown in (self.dropdown_x, self.dropdown_y, self.dropdown_type):
             dropdown.bind("<<ComboboxSelected>>", lambda event: self.update_plot())
-        for entry in (self.entry_title, self.entry_xlabel, self.entry_ylabel, self.entry_legend, self.entry_legend_cmp):
+        for entry in (self.entry_title, self.entry_xlabel, self.entry_ylabel, self.entry_legend):
             entry.bind("<KeyRelease>", lambda event: self.update_plot())
 
-        #importierte Vergleichsmessung (val_meas1, val_meas2, unit1, unit2), nur für das Diagramm
-        self.comparison=None
+        #Einstellungen der Vergleichsmessung werden in der ausgewählten Messung gespeichert
+        self.dropdown_cmp.bind("<<ComboboxSelected>>", lambda event: self.show_comparison())
+        for dropdown in (self.dropdown_x_cmp, self.dropdown_y_cmp):
+            dropdown.bind("<<ComboboxSelected>>", lambda event: self.store_comparison())
+        self.entry_legend_cmp.bind("<KeyRelease>", lambda event: self.store_comparison())
+
+        #importierte Vergleichsmessungen, nur für das Diagramm;
+        #je Messung ein dict mit data=(val_meas1, val_meas2, unit1, unit2), legend, x, y
+        self.comparisons=[]
+        self.show_comparison()
 
         frame_settings.pack(side="top", fill="x", padx=5, pady=5)
 
@@ -145,17 +158,65 @@ class PlotFrame:
         result=load_data_from_csv()
         if result is not None:
             filepath, val_meas1, val_meas2, meas_cnt, unit1, unit2=result
-            self.comparison=(val_meas1, val_meas2, unit1, unit2)
-            self.entry_legend_cmp.delete(0, tk.END)
-            self.entry_legend_cmp.insert(0, os.path.splitext(os.path.basename(filepath))[0])
-            #Achsenwahl der Vergleichsmessung startet wie die der aktuellen Messung
-            self.dropdown_x_cmp.set(self.dropdown_x.get())
-            self.dropdown_y_cmp.set(self.dropdown_y.get())
-            self.update_plot()
+            #Legende = Dateiname, Achsenwahl startet wie die der aktuellen Messung
+            self.comparisons.append({"data": (val_meas1, val_meas2, unit1, unit2),
+                                     "legend": os.path.splitext(os.path.basename(filepath))[0],
+                                     "x": self.dropdown_x.get(), "y": self.dropdown_y.get()})
+            self.show_comparison(len(self.comparisons)-1)
 
     def remove_comparison(self):
-        self.comparison=None
-        self.update_plot()
+        idx=self.dropdown_cmp.current()
+        if idx>=0:
+            del self.comparisons[idx]
+            self.show_comparison(min(idx, len(self.comparisons)-1))
+
+    #Namen im Auswahl-Dropdown, nummeriert, damit gleiche Legenden unterscheidbar bleiben
+    def comparison_names(self):
+        return [f"{i+1}: {cmp['legend'] or 'Vergleich'}" for i, cmp in enumerate(self.comparisons)]
+
+    #zeigt die Einstellungen der Vergleichsmessung idx (Standard: aktuelle Auswahl) in den Feldern an
+    def show_comparison(self, idx=None):
+        if idx is None:
+            idx=self.dropdown_cmp.current()
+        self.dropdown_cmp.config(values=self.comparison_names())
+        #ein deaktiviertes Eingabefeld lässt sich nicht beschreiben -> erst aktivieren
+        self.entry_legend_cmp.config(state="normal")
+        self.entry_legend_cmp.delete(0, tk.END)
+
+        if idx>=0 and self.comparisons:
+            cmp=self.comparisons[idx]
+            state="normal"
+            self.dropdown_cmp.current(idx)
+            self.entry_legend_cmp.insert(0, cmp["legend"])
+            self.dropdown_x_cmp.set(cmp["x"])
+            self.dropdown_y_cmp.set(cmp["y"])
+        else:
+            state="disabled"
+            self.dropdown_cmp.set("")
+            self.dropdown_x_cmp.set("")
+            self.dropdown_y_cmp.set("")
+
+        #ohne Vergleichsmessung gibt es nichts zu bearbeiten
+        self.entry_legend_cmp.config(state=state)
+        self.button_remove_cmp.config(state=state)
+        for dropdown in (self.dropdown_cmp, self.dropdown_x_cmp, self.dropdown_y_cmp):
+            dropdown.config(state="readonly" if state=="normal" else "disabled")
+
+        #beim ersten Aufruf aus __init__ gibt es noch kein Diagramm
+        if hasattr(self, "figures"):
+            self.update_plot()
+
+    #übernimmt Legende und Achsenwahl aus den Feldern in die ausgewählte Vergleichsmessung
+    def store_comparison(self):
+        idx=self.dropdown_cmp.current()
+        if idx>=0:
+            cmp=self.comparisons[idx]
+            cmp["legend"]=self.entry_legend_cmp.get()
+            cmp["x"]=self.dropdown_x_cmp.get()
+            cmp["y"]=self.dropdown_y_cmp.get()
+            self.dropdown_cmp.config(values=self.comparison_names())
+            self.dropdown_cmp.current(idx)
+            self.update_plot()
 
     #gibt die Werte und die Achsenbeschriftung zur gewählten Datenquelle zurück
     def get_source(self, source, data):
@@ -173,17 +234,20 @@ class PlotFrame:
         y, ylabel=self.get_source(self.dropdown_y.get(), data)
         linestyle, marker=PLOT_TYPES[self.dropdown_type.get()]
 
-        if self.comparison is not None:
-            x_cmp, _=self.get_source(self.dropdown_x_cmp.get(), self.comparison)
-            y_cmp, _=self.get_source(self.dropdown_y_cmp.get(), self.comparison)
+        #Kurven der Vergleichsmessungen als (x, y, Legende)
+        curves_cmp=[]
+        for cmp in self.comparisons:
+            x_cmp, _=self.get_source(cmp["x"], cmp["data"])
+            y_cmp, _=self.get_source(cmp["y"], cmp["data"])
+            curves_cmp.append((x_cmp, y_cmp, cmp["legend"] or "Vergleichsmessung"))
 
         for figure, ax, canvas in self.figures:
             ax.clear()
             ax.plot(x, y, linestyle=linestyle, marker=marker, label=self.entry_legend.get() or "Aktuelle Messung")
-            if self.comparison is not None:
-                ax.plot(x_cmp, y_cmp, linestyle=linestyle, marker=marker, label=self.entry_legend_cmp.get() or "Vergleichsmessung")
+            for x_cmp, y_cmp, legend in curves_cmp:
+                ax.plot(x_cmp, y_cmp, linestyle=linestyle, marker=marker, label=legend)
             #Legende nur bei Vergleich oder eigenem Legendentext anzeigen
-            if self.comparison is not None or self.entry_legend.get():
+            if curves_cmp or self.entry_legend.get():
                 ax.legend()
             ax.set_title(self.entry_title.get())
             ax.set_xlabel(self.entry_xlabel.get() or xlabel)
