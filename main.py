@@ -40,8 +40,8 @@ atexit.register(com.close_ports)
 #-------------------------------------------------------------------------------------------------
 root=tk.Tk()
 root.title("Messhilfe")
-root.geometry("700x700")
-root.minsize(700,630)
+root.geometry("700x720")
+root.minsize(700,720)
 
 icon=tk.PhotoImage(file="messgerat.png")
 root.iconphoto(True, icon)
@@ -229,11 +229,28 @@ def new_measure():
         label_open_file.config(text="")
         plot.update_plot()
 
+def sort_data(sort_by):
+    global val_meas1, val_meas2
+    if val_meas1 and val_meas2:
+        measurements=list(zip(val_meas1, val_meas2))
+        if sort_by >= 0:
+            measurements.sort(key=lambda x: x[sort_by])
+            val_meas1, val_meas2 = zip(*measurements)
+        plot.update_plot()
+    else:
+        print("Keine Messwerte zum Sortieren vorhanden.")
+
 button_measure=ttk.Button(frame_measurement, text="Messung starten", command=meas_start)
 button_saveData=ttk.Button(frame_measurement, text="Messwerte speichern", command= save_data)
 button_loadData=ttk.Button(frame_measurement, text="Messwerte laden", command=load_data)
 button_newMeasure=ttk.Button(frame_measurement, text="Neue Messung", command=new_measure)
+button_newMeasure=ttk.Button(frame_measurement, text="Neue Messung", command=new_measure)
 button_showData=ttk.Button(frame_measurement, text="Messungen anzeigen", command=lambda: show_data(val_meas1, val_meas2, com.unit[PORT1], com.unit[PORT2]))
+
+sort_frame=tk.LabelFrame(frame_measurement,bg="lightgray", text="Messwerte Sortieren nach:", width=200)
+dropdown_sort=ttk.Combobox(sort_frame,values=["Port 1", "Port 2"], state="readonly")
+dropdown_sort.bind("<<ComboboxSelected>>", lambda e: sort_data(dropdown_sort.current()))
+
 measure_value1_frame=tk.LabelFrame(frame_measurement,bg="lightgray", text="Messwert Port 1", width=200)
 measure_value2_frame=tk.LabelFrame(frame_measurement, bg="lightgray", text="Messwert Port 2", width=200)
 label_measure1=ttk.Label(measure_value1_frame, text="---")
@@ -249,8 +266,11 @@ button_newMeasure.grid(row=1, column=3, padx=10, pady=10)
 label_open_file.grid(row=2, column=0,columnspan=4, padx=10, pady=10,sticky="w")
 label_meascnt.grid(row=0, column=3, padx=10, pady=10)
 button_showData.grid(row=1, column=0, padx=10, pady=10)
+dropdown_sort.grid(row=2, column=3)
+sort_frame.grid(row=3, column=2,columnspan=2, padx=10, pady=10)
 measure_value1_frame.grid(row=3, column=0, padx=10, pady=10)
 measure_value2_frame.grid(row=3, column=1, padx=10, pady=10)
+dropdown_sort.pack(fill="x", padx=10, pady=10)
 label_measure1.pack(fill="x", padx=10, pady=10)
 label_measure2.pack(fill="x", padx=10, pady=10)
 
