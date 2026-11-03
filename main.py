@@ -11,6 +11,8 @@
 # ------------------------------------------------------------------------------------------------- 
 
 #eigene Imports
+
+
 from serial_communication import *
 from file_handle import *
 from popup import *
@@ -21,7 +23,6 @@ import atexit
 import tkinter as tk
 from tkinter import ttk 
 import matplotlib.pyplot as plt
-
 #globale Variablen für die Messung und Speicherung der Messwerte
 val_meas1=[]  
 val_meas2=[]
@@ -40,8 +41,8 @@ atexit.register(com.close_ports)
 #-------------------------------------------------------------------------------------------------
 root=tk.Tk()
 root.title("Messhilfe")
-root.geometry("700x720")
-root.minsize(700,720)
+root.geometry("750x720")
+root.minsize(760,720)
 
 icon=tk.PhotoImage(file="messgerat.png")
 root.iconphoto(True, icon)
@@ -51,7 +52,7 @@ style=ttk.Style()
 style.configure("TLabel", background="lightgray")
 
 #Strukturierung des Fensters in Frames
-frame_connection=tk.Frame(root, bg="lightgray",width=300)
+frame_connection=tk.Frame(root, bg="lightgray",width=350)
 frame_measurement=tk.LabelFrame(root,text="Messung", bg="lightgray",width=400,height=150)
 frame_plot=tk.LabelFrame(root,text="Diagramm", bg="lightgray",width=400,height=350)
 
@@ -235,7 +236,7 @@ def sort_data(sort_by):
         measurements=list(zip(val_meas1, val_meas2))
         if sort_by >= 0:
             measurements.sort(key=lambda x: x[sort_by])
-            val_meas1, val_meas2 = zip(*measurements)
+            val_meas1, val_meas2 = map(list,zip(*measurements))
         plot.update_plot()
     else:
         print("Keine Messwerte zum Sortieren vorhanden.")
